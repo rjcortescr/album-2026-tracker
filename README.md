@@ -106,7 +106,7 @@ MIT — Hacé lo que quieras con este código. Si lo usás en algo público, una
 
 ## 👤 Autor
 
-**Rodolfo Cortés** — CEO & Co-Founder de [Lúmina](https://luminalatam.com)
+**Rodolfo Cortés** — CEO & Co-Founder de [LÚMINA](https://luminalatam.com)
 
 - GitHub: [@rjcortescr](https://github.com/rjcortescr)
 

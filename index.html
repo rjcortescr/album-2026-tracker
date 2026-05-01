@@ -1,0 +1,1756 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>Mi Álbum 2026 — Tracker Panini</title>
+
+<!-- PWA Meta Tags -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0a3d2e">
+<meta name="description" content="Tracker del álbum Panini Mundial 2026">
+
+<!-- iOS Specific -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Álbum 2026">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="apple-touch-icon" sizes="152x152" href="icon-152.png">
+<link rel="apple-touch-icon" sizes="167x167" href="icon-167.png">
+<link rel="apple-touch-icon" sizes="180x180" href="icon-180.png">
+
+<!-- Android Specific -->
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Archivo:wght@400;500;600;700;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root {
+    --pitch: #0a3d2e;
+    --pitch-dark: #052619;
+    --pitch-light: #14523f;
+    --gold: #d4a437;
+    --gold-bright: #f4c659;
+    --cream: #f5efdc;
+    --red: #c8334a;
+    --red-bright: #e85572;
+    --premium: #9d7ec4;
+    --premium-bright: #c9a8e8;
+    --shadow: rgba(0,0,0,0.4);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    background: var(--pitch-dark);
+    color: var(--cream);
+    font-family: 'Archivo', sans-serif;
+    min-height: 100vh;
+    min-height: 100dvh;
+    -webkit-text-size-adjust: 100%;
+  }
+  body {
+    background-image:
+      repeating-linear-gradient(90deg, transparent 0, transparent 60px, rgba(255,255,255,0.015) 60px, rgba(255,255,255,0.015) 120px),
+      radial-gradient(ellipse at top, var(--pitch-light) 0%, var(--pitch-dark) 70%);
+    padding-bottom: 80px;
+    /* Safe area para notch del iPhone cuando se usa como app */
+    padding-top: env(safe-area-inset-top);
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
+
+  /* HEADER */
+  .header {
+    background: linear-gradient(180deg, var(--pitch) 0%, var(--pitch-dark) 100%);
+    border-bottom: 3px solid var(--gold);
+    padding: 24px 20px 20px;
+    position: sticky; top: 0; z-index: 50;
+    box-shadow: 0 4px 20px var(--shadow);
+  }
+  .header-inner { max-width: 1200px; margin: 0 auto; }
+  .brand {
+    display: flex; align-items: baseline; gap: 12px; margin-bottom: 14px;
+    flex-wrap: wrap;
+  }
+  .brand-mark {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(28px, 5vw, 42px);
+    color: var(--gold-bright);
+    letter-spacing: 0.04em;
+    line-height: 1;
+  }
+  .brand-sub {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--cream);
+    opacity: 0.6;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+  }
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    background: rgba(0,0,0,0.3);
+    border-radius: 8px;
+    padding: 10px;
+  }
+  .stat { text-align: center; padding: 6px 4px; }
+  .stat-num {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(20px, 4vw, 32px);
+    color: var(--gold-bright);
+    line-height: 1;
+    display: block;
+  }
+  .stat-label {
+    font-size: 9px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--cream);
+    opacity: 0.7;
+    margin-top: 4px;
+  }
+  .progress-bar {
+    height: 6px;
+    background: rgba(0,0,0,0.4);
+    border-radius: 3px;
+    margin-top: 12px;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--gold) 0%, var(--gold-bright) 100%);
+    border-radius: 3px;
+    transition: width 0.4s ease;
+    box-shadow: 0 0 12px rgba(244,198,89,0.5);
+  }
+
+  /* CONTAINER */
+  .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+
+  /* TABS */
+  .tabs {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 20px;
+    background: rgba(0,0,0,0.3);
+    border-radius: 10px;
+    padding: 4px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .tab {
+    flex: 1;
+    min-width: max-content;
+    padding: 10px 14px;
+    background: transparent;
+    border: none;
+    color: var(--cream);
+    font-family: 'Archivo', sans-serif;
+    font-weight: 600;
+    font-size: 13px;
+    letter-spacing: 0.05em;
+    cursor: pointer;
+    border-radius: 8px;
+    transition: all 0.2s;
+    opacity: 0.6;
+    white-space: nowrap;
+  }
+  .tab.active {
+    background: var(--gold);
+    color: var(--pitch-dark);
+    opacity: 1;
+  }
+  .tab:hover:not(.active) { opacity: 0.9; }
+
+  /* SECTIONS */
+  .section { display: none; }
+  .section.active { display: block; animation: fadeIn 0.3s ease; }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* INSTRUCTIONS BOX */
+  .instructions {
+    background: rgba(212,164,55,0.08);
+    border: 1px solid rgba(212,164,55,0.3);
+    border-radius: 10px;
+    padding: 14px 16px;
+    margin-bottom: 20px;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+  .instructions strong { color: var(--gold-bright); }
+
+  /* SEARCH */
+  .nav-controls {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+  }
+  .search-box {
+    flex: 1;
+    min-width: 200px;
+    padding: 10px 14px;
+    background: rgba(0,0,0,0.3);
+    border: 1px solid rgba(212,164,55,0.3);
+    border-radius: 8px;
+    color: var(--cream);
+    font-family: inherit;
+    font-size: 16px; /* 16px mínimo evita auto-zoom de iOS */
+  }
+  .search-box::placeholder { color: rgba(245,239,220,0.4); }
+  .search-box:focus { outline: none; border-color: var(--gold); }
+
+  /* TEAMS GRID */
+  .teams-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 12px;
+  }
+  .team-card {
+    background: linear-gradient(135deg, var(--pitch) 0%, var(--pitch-light) 100%);
+    border: 1px solid rgba(212,164,55,0.2);
+    border-radius: 10px;
+    padding: 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+  .team-card:hover {
+    border-color: var(--gold);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+  }
+  .team-card.complete {
+    background: linear-gradient(135deg, #2a4a1a 0%, #3d6a2a 100%);
+    border-color: var(--gold-bright);
+  }
+  .team-flag { font-size: 32px; line-height: 1; margin-bottom: 8px; }
+  .team-name {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 18px;
+    letter-spacing: 0.03em;
+    color: var(--cream);
+    line-height: 1.1;
+  }
+  .team-conf {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    opacity: 0.5;
+    letter-spacing: 0.1em;
+    margin-top: 2px;
+  }
+  .team-progress {
+    margin-top: 8px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--gold-bright);
+  }
+  .team-progress-bar {
+    height: 3px;
+    background: rgba(0,0,0,0.4);
+    border-radius: 2px;
+    margin-top: 5px;
+    overflow: hidden;
+  }
+  .team-progress-fill {
+    height: 100%;
+    background: var(--gold);
+    transition: width 0.3s;
+  }
+  .team-card.complete::after {
+    content: '★';
+    position: absolute;
+    top: 8px;
+    right: 10px;
+    color: var(--gold-bright);
+    font-size: 18px;
+  }
+
+  /* DETAIL VIEW */
+  .detail-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 20px;
+    padding: 16px;
+    background: rgba(0,0,0,0.3);
+    border-radius: 10px;
+    border-left: 4px solid var(--gold);
+    flex-wrap: wrap;
+  }
+  .back-btn {
+    background: transparent;
+    border: 1px solid var(--gold);
+    color: var(--gold-bright);
+    padding: 8px 14px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-family: inherit;
+    font-weight: 600;
+    transition: all 0.15s;
+  }
+  .back-btn:hover {
+    background: var(--gold);
+    color: var(--pitch-dark);
+  }
+  .detail-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 28px;
+    color: var(--gold-bright);
+    letter-spacing: 0.03em;
+  }
+  .detail-meta {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--cream);
+    opacity: 0.7;
+    margin-top: 4px;
+  }
+
+  /* STICKER GRID */
+  .stickers-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));
+    gap: 8px;
+  }
+  .sticker {
+    aspect-ratio: 3/4;
+    background: rgba(0,0,0,0.4);
+    border: 1.5px dashed rgba(245,239,220,0.2);
+    border-radius: 6px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.15s;
+    position: relative;
+    user-select: none;
+  }
+  .sticker-num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    font-weight: 700;
+    color: rgba(245,239,220,0.5);
+  }
+  .sticker.owned {
+    background: linear-gradient(135deg, var(--gold) 0%, var(--gold-bright) 100%);
+    border: 1.5px solid var(--gold-bright);
+    border-style: solid;
+  }
+  .sticker.owned .sticker-num { color: var(--pitch-dark); }
+  .sticker.duplicate {
+    background: linear-gradient(135deg, var(--red) 0%, var(--red-bright) 100%);
+    border: 1.5px solid var(--red-bright);
+    border-style: solid;
+  }
+  .sticker.duplicate .sticker-num { color: white; }
+  .sticker.premium {
+    background: linear-gradient(135deg, var(--premium-bright) 0%, var(--premium) 100%);
+    border: 1.5px solid var(--premium-bright);
+    border-style: solid;
+    box-shadow: inset 0 0 8px rgba(255,255,255,0.3);
+  }
+  .sticker.premium .sticker-num { color: white; }
+  .sticker:hover { transform: scale(1.05); }
+  .dup-count {
+    position: absolute;
+    top: -6px;
+    right: -6px;
+    background: var(--pitch-dark);
+    color: var(--gold-bright);
+    border: 2px solid var(--gold);
+    border-radius: 50%;
+    width: 22px;
+    height: 22px;
+    font-size: 10px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  /* LEGEND */
+  .legend {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 14px;
+    flex-wrap: wrap;
+    font-size: 11px;
+    color: var(--cream);
+    opacity: 0.85;
+  }
+  .legend-dot {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border-radius: 3px;
+    margin-right: 5px;
+    vertical-align: middle;
+  }
+
+  /* EXTRA STICKERS */
+  .extra-category {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 16px;
+    color: var(--gold-bright);
+    letter-spacing: 0.08em;
+    margin: 18px 0 8px;
+    padding-bottom: 4px;
+    border-bottom: 1px solid rgba(212,164,55,0.3);
+  }
+  .extra-category:first-child { margin-top: 0; }
+  .extra-player {
+    background: rgba(0,0,0,0.3);
+    border-radius: 10px;
+    padding: 14px;
+    margin-bottom: 10px;
+    border-left: 3px solid var(--gold);
+  }
+  .extra-player-name {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 18px;
+    color: var(--cream);
+    letter-spacing: 0.03em;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .extra-variants {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+  }
+  .extra-variant {
+    aspect-ratio: 1;
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    transition: all 0.2s;
+    user-select: none;
+    border: 2px dashed rgba(255,255,255,0.15);
+    position: relative;
+    color: rgba(255,255,255,0.4);
+    text-align: center;
+    padding: 4px;
+  }
+  .extra-variant:hover { transform: scale(1.05); }
+  .extra-variant.owned { border-style: solid; color: white; }
+  .extra-variant.purple.owned {
+    background: linear-gradient(135deg, var(--premium) 0%, #6d4f9c 100%);
+    border-color: var(--premium-bright);
+  }
+  .extra-variant.bronze.owned {
+    background: linear-gradient(135deg, #cd7f32 0%, #8b5a1f 100%);
+    border-color: #e09553;
+  }
+  .extra-variant.silver.owned {
+    background: linear-gradient(135deg, #c0c0c0 0%, #808080 100%);
+    border-color: #e0e0e0;
+    color: #1a1a1a;
+  }
+  .extra-variant.gold.owned {
+    background: linear-gradient(135deg, var(--gold) 0%, var(--gold-bright) 100%);
+    border-color: #f4d97a;
+    color: var(--pitch-dark);
+  }
+  .extra-variant.duplicate {
+    background: linear-gradient(135deg, var(--red) 0%, var(--red-bright) 100%);
+    border-style: solid;
+    border-color: var(--red-bright);
+    color: white;
+  }
+  .extra-rarity {
+    font-size: 8px;
+    opacity: 0.85;
+    margin-top: 2px;
+  }
+  .extra-dup-badge {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    background: var(--pitch-dark);
+    color: var(--gold-bright);
+    border: 2px solid var(--gold);
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    font-size: 9px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* TRADE */
+  .trade-card {
+    background: rgba(0,0,0,0.3);
+    border-radius: 10px;
+    padding: 16px;
+    margin-bottom: 14px;
+    border-left: 4px solid var(--gold);
+  }
+  .trade-card h3 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 22px;
+    color: var(--gold-bright);
+    margin-bottom: 10px;
+    letter-spacing: 0.03em;
+  }
+  .trade-list {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    line-height: 1.8;
+    word-break: break-word;
+    color: var(--cream);
+    background: rgba(0,0,0,0.3);
+    padding: 12px;
+    border-radius: 6px;
+    max-height: 280px;
+    overflow-y: auto;
+  }
+  .trade-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+    flex-wrap: wrap;
+  }
+  .btn {
+    background: var(--gold);
+    color: var(--pitch-dark);
+    border: none;
+    padding: 10px 16px;
+    border-radius: 6px;
+    font-family: inherit;
+    font-weight: 700;
+    font-size: 13px;
+    cursor: pointer;
+    letter-spacing: 0.03em;
+    transition: all 0.15s;
+  }
+  .btn:hover {
+    background: var(--gold-bright);
+    transform: translateY(-1px);
+  }
+  .btn-secondary {
+    background: transparent;
+    color: var(--gold-bright);
+    border: 1px solid var(--gold);
+  }
+  .btn-secondary:hover { background: rgba(212,164,55,0.15); }
+  .btn-danger {
+    background: var(--red);
+    color: white;
+  }
+  .btn-danger:hover { background: var(--red-bright); }
+
+  /* SETTINGS */
+  .setting-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+    font-size: 13px;
+  }
+  .setting-input {
+    padding: 6px 10px;
+    background: rgba(0,0,0,0.3);
+    border: 1px solid var(--gold);
+    color: var(--cream);
+    border-radius: 4px;
+    font-family: inherit;
+    width: 80px;
+  }
+
+  /* TOAST */
+  .toast {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--pitch-light);
+    color: var(--cream);
+    padding: 12px 20px;
+    border-radius: 8px;
+    border: 1px solid var(--gold);
+    font-size: 13px;
+    font-weight: 600;
+    z-index: 100;
+    box-shadow: 0 8px 24px var(--shadow);
+    animation: toastIn 0.3s ease;
+  }
+  @keyframes toastIn {
+    from { opacity: 0; transform: translate(-50%, 10px); }
+    to { opacity: 1; transform: translate(-50%, 0); }
+  }
+
+  /* MOBILE */
+  @media (max-width: 600px) {
+    .stickers-grid {
+      grid-template-columns: repeat(auto-fill, minmax(56px, 1fr));
+      gap: 6px;
+    }
+    .sticker-num { font-size: 11px; }
+    .teams-grid {
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    }
+    .stat-num { font-size: 22px; }
+    .container { padding: 16px; }
+  }
+
+  /* LOGIN MODAL */
+  .auth-overlay {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100vh;
+    height: 100dvh;
+    background: var(--pitch-dark);
+    background-image: radial-gradient(ellipse at top, var(--pitch-light) 0%, var(--pitch-dark) 70%);
+    z-index: 200;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    padding-top: max(20px, env(safe-area-inset-top));
+    padding-bottom: max(20px, env(safe-area-inset-bottom));
+    overflow-y: auto;
+  }
+  .auth-card {
+    background: linear-gradient(135deg, var(--pitch) 0%, var(--pitch-light) 100%);
+    border: 1px solid var(--gold);
+    border-radius: 14px;
+    padding: 32px 24px;
+    max-width: 400px;
+    width: 100%;
+    box-shadow: 0 20px 60px var(--shadow);
+  }
+  .auth-brand {
+    text-align: center;
+    margin-bottom: 24px;
+  }
+  .auth-brand-mark {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 36px;
+    color: var(--gold-bright);
+    letter-spacing: 0.04em;
+    line-height: 1;
+  }
+  .auth-brand-sub {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--cream);
+    opacity: 0.6;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-top: 6px;
+  }
+  .auth-tabs {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 20px;
+    background: rgba(0,0,0,0.3);
+    border-radius: 8px;
+    padding: 4px;
+  }
+  .auth-tab {
+    flex: 1;
+    padding: 10px;
+    background: transparent;
+    border: none;
+    color: var(--cream);
+    font-family: inherit;
+    font-weight: 600;
+    font-size: 13px;
+    cursor: pointer;
+    border-radius: 6px;
+    opacity: 0.6;
+    transition: all 0.2s;
+  }
+  .auth-tab.active {
+    background: var(--gold);
+    color: var(--pitch-dark);
+    opacity: 1;
+  }
+  .auth-input {
+    width: 100%;
+    padding: 12px 14px;
+    background: rgba(0,0,0,0.3);
+    border: 1px solid rgba(212,164,55,0.3);
+    border-radius: 8px;
+    color: var(--cream);
+    font-family: inherit;
+    font-size: 16px; /* 16px mínimo evita auto-zoom de iOS */
+    margin-bottom: 12px;
+  }
+  .auth-input:focus {
+    outline: none;
+    border-color: var(--gold);
+  }
+  .auth-input::placeholder {
+    color: rgba(245,239,220,0.4);
+  }
+  .auth-submit {
+    width: 100%;
+    padding: 12px;
+    background: var(--gold);
+    color: var(--pitch-dark);
+    border: none;
+    border-radius: 8px;
+    font-family: inherit;
+    font-weight: 700;
+    font-size: 14px;
+    cursor: pointer;
+    letter-spacing: 0.03em;
+    transition: all 0.15s;
+  }
+  .auth-submit:hover {
+    background: var(--gold-bright);
+  }
+  .auth-submit:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  .auth-error {
+    color: #ff8b95;
+    font-size: 12px;
+    margin-top: 10px;
+    min-height: 18px;
+    text-align: center;
+  }
+  .auth-info {
+    font-size: 11px;
+    line-height: 1.5;
+    opacity: 0.7;
+    text-align: center;
+    margin-top: 16px;
+  }
+
+  /* USER BADGE & SYNC */
+  .user-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    font-size: 11px;
+    flex-wrap: wrap;
+    gap: 8px;
+    row-gap: 8px;
+  }
+  .user-info {
+    color: var(--cream);
+    opacity: 0.85;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 100%;
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+  .user-bar-right {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    flex-shrink: 0;
+  }
+  .sync-status {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    padding: 3px 8px;
+    border-radius: 4px;
+    letter-spacing: 0.05em;
+  }
+  .sync-status.syncing {
+    background: rgba(244,198,89,0.2);
+    color: var(--gold-bright);
+  }
+  .sync-status.synced {
+    background: rgba(80,200,120,0.15);
+    color: #80e0a0;
+  }
+  .sync-status.error {
+    background: rgba(200,51,74,0.2);
+    color: #ff8b95;
+  }
+  .logout-btn {
+    background: transparent;
+    border: 1px solid rgba(245,239,220,0.3);
+    color: var(--cream);
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-family: inherit;
+    font-size: 11px;
+    cursor: pointer;
+    opacity: 0.7;
+    transition: all 0.15s;
+  }
+  .logout-btn:hover {
+    opacity: 1;
+    border-color: var(--gold);
+    color: var(--gold-bright);
+  }
+</style>
+</head>
+<body>
+
+<!-- LOGIN MODAL -->
+<div class="auth-overlay" id="auth-overlay">
+  <div class="auth-card">
+    <div class="auth-brand">
+      <div class="auth-brand-mark">MI ÁLBUM 2026</div>
+      <div class="auth-brand-sub">Panini · FIFA</div>
+    </div>
+    <div class="auth-tabs">
+      <button class="auth-tab active" data-auth="login">Ingresar</button>
+      <button class="auth-tab" data-auth="signup">Registrarse</button>
+    </div>
+    <input type="email" class="auth-input" id="auth-email" placeholder="Email" autocomplete="email">
+    <input type="password" class="auth-input" id="auth-password" placeholder="Contraseña (mín. 6 caracteres)" autocomplete="current-password">
+    <button class="auth-submit" id="auth-submit">Ingresar</button>
+    <div class="auth-error" id="auth-error"></div>
+    <div class="auth-info">
+      Tu álbum se guarda en la nube y se sincroniza entre todos tus dispositivos.
+    </div>
+  </div>
+</div>
+
+<header class="header">
+  <div class="header-inner">
+    <div class="user-bar">
+      <span class="user-info" id="user-info"></span>
+      <div class="user-bar-right">
+        <span class="sync-status synced" id="sync-status">✓ Sincronizado</span>
+        <button class="logout-btn" id="logout-btn">Cerrar sesión</button>
+      </div>
+    </div>
+    <div class="brand">
+      <div class="brand-mark">MI ÁLBUM 2026</div>
+      <div class="brand-sub">Panini · FIFA</div>
+    </div>
+    <div class="stats-row">
+      <div class="stat"><span class="stat-num" id="stat-owned">0</span><div class="stat-label">Tengo</div></div>
+      <div class="stat"><span class="stat-num" id="stat-missing">0</span><div class="stat-label">Faltan</div></div>
+      <div class="stat"><span class="stat-num" id="stat-dups">0</span><div class="stat-label">Repetidas</div></div>
+      <div class="stat"><span class="stat-num" id="stat-pct">0%</span><div class="stat-label">Avance</div></div>
+    </div>
+    <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+  </div>
+</header>
+
+<main class="container">
+  <div class="tabs">
+    <button class="tab active" data-tab="album">Selecciones</button>
+    <button class="tab" data-tab="special">Premium</button>
+    <button class="tab" data-tab="extra">Extra Stickers</button>
+    <button class="tab" data-tab="trade">Intercambio</button>
+    <button class="tab" data-tab="settings">Ajustes</button>
+  </div>
+
+  <!-- SELECCIONES -->
+  <section class="section active" id="section-album">
+    <div id="view-teams">
+      <div class="instructions">
+        <strong>Cómo usar:</strong> Tocá una selección para ver sus 20 cromos. En el detalle, <strong>1 toque</strong> = la tenés. <strong>2 toques</strong> = repetida. Cada toque adicional suma una repetida más (hasta 4). El 6º toque vuelve a faltante.
+      </div>
+      <div class="nav-controls">
+        <input type="text" class="search-box" id="team-search" placeholder="Buscar selección o confederación...">
+      </div>
+      <div class="teams-grid" id="teams-grid"></div>
+    </div>
+
+    <div id="view-detail" style="display:none">
+      <div class="detail-header">
+        <button class="back-btn" id="back-btn">← Volver</button>
+        <div>
+          <div class="detail-title" id="detail-title"></div>
+          <div class="detail-meta" id="detail-meta"></div>
+        </div>
+      </div>
+      <div class="legend">
+        <span><span class="legend-dot" style="background:rgba(0,0,0,0.4); border:1.5px dashed rgba(245,239,220,0.3)"></span>Falta</span>
+        <span><span class="legend-dot" style="background:linear-gradient(135deg,var(--gold),var(--gold-bright))"></span>Tengo</span>
+        <span><span class="legend-dot" style="background:var(--red)"></span>Repetida</span>
+      </div>
+      <div class="stickers-grid" id="stickers-grid"></div>
+    </div>
+  </section>
+
+  <!-- PREMIUM -->
+  <section class="section" id="section-special">
+    <div class="instructions">
+      <strong>Cromos Especiales (FWC):</strong> El álbum oficial incluye <strong>20 cromos especiales</strong> con prefijo <strong>FWC</strong> (introducción, estadios, récords, mascota, etc.). Cuentan dentro del total de 980. Mismo sistema de toques.
+    </div>
+    <div class="legend">
+      <span><span class="legend-dot" style="background:rgba(0,0,0,0.4); border:1.5px dashed rgba(245,239,220,0.3)"></span>Falta</span>
+      <span><span class="legend-dot" style="background:linear-gradient(135deg,var(--premium-bright),var(--premium))"></span>Premium</span>
+      <span><span class="legend-dot" style="background:var(--red)"></span>Repetida</span>
+    </div>
+    <div id="special-meta" style="font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--gold-bright); margin-bottom:12px;"></div>
+    <div class="stickers-grid" id="special-grid"></div>
+  </section>
+
+  <!-- EXTRA STICKERS -->
+  <section class="section" id="section-extra">
+    <div class="instructions">
+      <strong>Extra Stickers:</strong> 20 jugadores élite × 4 variantes = <strong>80 cromos</strong>. No tienen casilla, son extras. Aparecen <strong>1 cada ~100 sobres</strong>. Rareza:
+      <span style="color:var(--premium-bright);font-weight:700">Morado</span> →
+      <span style="color:#e09553;font-weight:700">Bronce</span> →
+      <span style="color:#c0c0c0;font-weight:700">Plata</span> →
+      <span style="color:var(--gold-bright);font-weight:700">Oro (1/1.900)</span>.
+    </div>
+    <div id="extra-meta" style="font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--gold-bright); margin-bottom:12px;"></div>
+    <div id="extra-players-list"></div>
+  </section>
+
+  <!-- INTERCAMBIO -->
+  <section class="section" id="section-trade">
+    <div class="trade-card">
+      <h3>📤 Mis repetidas (para dar)</h3>
+      <div class="trade-list" id="dups-list">Cargando...</div>
+      <div class="trade-actions">
+        <button class="btn" id="copy-dups">Copiar lista</button>
+        <button class="btn-secondary btn" id="share-dups">Compartir WhatsApp</button>
+      </div>
+    </div>
+    <div class="trade-card" style="border-left-color: var(--red)">
+      <h3>📥 Mis faltantes (busco)</h3>
+      <div class="trade-list" id="missing-list">Cargando...</div>
+      <div class="trade-actions">
+        <button class="btn" id="copy-missing">Copiar lista</button>
+        <button class="btn-secondary btn" id="share-missing">Compartir WhatsApp</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- AJUSTES -->
+  <section class="section" id="section-settings">
+    <div class="trade-card">
+      <h3>📊 Composición del álbum</h3>
+      <p style="margin-bottom:12px; font-size:13px; line-height:1.6">
+        El álbum oficial Panini Mundial 2026 tiene <strong>980 cromos</strong> en 112 páginas, distribuidos así:
+      </p>
+      <ul style="font-size:13px; line-height:1.8; padding-left:20px; margin-bottom:12px;">
+        <li><strong>960 cromos de selecciones</strong> (48 × 20 numerados del 1 al 20)</li>
+        <li><strong>20 cromos especiales FWC</strong> (introducción, estadios, récords, etc.)</li>
+        <li><strong>+80 Extra Stickers</strong> aparte (20 jugadores × 4 colores)</li>
+      </ul>
+      <p style="font-size:12px; line-height:1.5; opacity:0.8;">
+        Cada selección ocupa 2 páginas con sus 20 cromos numerados (formato CÓDIGO+NÚMERO, ej: ARG 9, BRA 1, FWC 5).
+      </p>
+    </div>
+    <div class="trade-card">
+      <h3>☁️ Sincronización en la nube</h3>
+      <p style="font-size:13px; line-height:1.6;">
+        Tu progreso se guarda automáticamente en la nube y se sincroniza entre todos tus dispositivos. Solo necesitás iniciar sesión con tu email.
+      </p>
+    </div>
+    <div class="trade-card" style="border-left-color: var(--red)">
+      <h3>⚠ Reiniciar álbum</h3>
+      <p style="margin-bottom:12px; font-size:13px; line-height:1.5">
+        Borra todo tu progreso de la nube. Esta acción no se puede deshacer.
+      </p>
+      <button class="btn btn-danger" id="reset-btn">Reiniciar todo</button>
+    </div>
+  </section>
+</main>
+
+<script>
+// ============================================================
+// DATOS — Lista oficial de selecciones clasificadas Mundial 2026
+// ============================================================
+// 48 selecciones clasificadas al Mundial 2026 — lista OFICIAL FINAL
+// Fuente: 12 grupos del sorteo oficial FIFA + repechajes (marzo 2026)
+const TEAMS = [
+  // Grupo A
+  {code:'MEX', name:'México',          flag:'🇲🇽', conf:'CONCACAF'},
+  {code:'RSA', name:'Sudáfrica',       flag:'🇿🇦', conf:'CAF'},
+  {code:'KOR', name:'Corea del Sur',   flag:'🇰🇷', conf:'AFC'},
+  {code:'CZE', name:'República Checa', flag:'🇨🇿', conf:'UEFA'},
+  // Grupo B
+  {code:'CAN', name:'Canadá',          flag:'🇨🇦', conf:'CONCACAF'},
+  {code:'BIH', name:'Bosnia y Herz.',  flag:'🇧🇦', conf:'UEFA'},
+  {code:'QAT', name:'Catar',           flag:'🇶🇦', conf:'AFC'},
+  {code:'SUI', name:'Suiza',           flag:'🇨🇭', conf:'UEFA'},
+  // Grupo C
+  {code:'BRA', name:'Brasil',          flag:'🇧🇷', conf:'CONMEBOL'},
+  {code:'MAR', name:'Marruecos',       flag:'🇲🇦', conf:'CAF'},
+  {code:'HAI', name:'Haití',           flag:'🇭🇹', conf:'CONCACAF'},
+  {code:'SCO', name:'Escocia',         flag:'🏴󠁧󠁢󠁳󠁣󠁴󠁿', conf:'UEFA'},
+  // Grupo D
+  {code:'USA', name:'Estados Unidos',  flag:'🇺🇸', conf:'CONCACAF'},
+  {code:'PAR', name:'Paraguay',        flag:'🇵🇾', conf:'CONMEBOL'},
+  {code:'AUS', name:'Australia',       flag:'🇦🇺', conf:'AFC'},
+  {code:'TUR', name:'Turquía',         flag:'🇹🇷', conf:'UEFA'},
+  // Grupo E
+  {code:'GER', name:'Alemania',        flag:'🇩🇪', conf:'UEFA'},
+  {code:'CUR', name:'Curazao',         flag:'🇨🇼', conf:'CONCACAF'},
+  {code:'CIV', name:'Costa de Marfil', flag:'🇨🇮', conf:'CAF'},
+  {code:'ECU', name:'Ecuador',         flag:'🇪🇨', conf:'CONMEBOL'},
+  // Grupo F
+  {code:'NED', name:'Países Bajos',    flag:'🇳🇱', conf:'UEFA'},
+  {code:'JPN', name:'Japón',           flag:'🇯🇵', conf:'AFC'},
+  {code:'SWE', name:'Suecia',          flag:'🇸🇪', conf:'UEFA'},
+  {code:'TUN', name:'Túnez',           flag:'🇹🇳', conf:'CAF'},
+  // Grupo G
+  {code:'BEL', name:'Bélgica',         flag:'🇧🇪', conf:'UEFA'},
+  {code:'EGY', name:'Egipto',          flag:'🇪🇬', conf:'CAF'},
+  {code:'IRN', name:'Irán',            flag:'🇮🇷', conf:'AFC'},
+  {code:'NZL', name:'Nueva Zelanda',   flag:'🇳🇿', conf:'OFC'},
+  // Grupo H
+  {code:'ESP', name:'España',          flag:'🇪🇸', conf:'UEFA'},
+  {code:'CPV', name:'Cabo Verde',      flag:'🇨🇻', conf:'CAF'},
+  {code:'KSA', name:'Arabia Saudita',  flag:'🇸🇦', conf:'AFC'},
+  {code:'URU', name:'Uruguay',         flag:'🇺🇾', conf:'CONMEBOL'},
+  // Grupo I
+  {code:'FRA', name:'Francia',         flag:'🇫🇷', conf:'UEFA'},
+  {code:'SEN', name:'Senegal',         flag:'🇸🇳', conf:'CAF'},
+  {code:'IRQ', name:'Irak',            flag:'🇮🇶', conf:'AFC'},
+  {code:'NOR', name:'Noruega',         flag:'🇳🇴', conf:'UEFA'},
+  // Grupo J
+  {code:'ARG', name:'Argentina',       flag:'🇦🇷', conf:'CONMEBOL'},
+  {code:'ALG', name:'Argelia',         flag:'🇩🇿', conf:'CAF'},
+  {code:'AUT', name:'Austria',         flag:'🇦🇹', conf:'UEFA'},
+  {code:'JOR', name:'Jordania',        flag:'🇯🇴', conf:'AFC'},
+  // Grupo K
+  {code:'POR', name:'Portugal',        flag:'🇵🇹', conf:'UEFA'},
+  {code:'COD', name:'RD Congo',        flag:'🇨🇩', conf:'CAF'},
+  {code:'UZB', name:'Uzbekistán',      flag:'🇺🇿', conf:'AFC'},
+  {code:'COL', name:'Colombia',        flag:'🇨🇴', conf:'CONMEBOL'},
+  // Grupo L
+  {code:'ENG', name:'Inglaterra',      flag:'🏴󠁧󠁢󠁥󠁮󠁧󠁿', conf:'UEFA'},
+  {code:'CRO', name:'Croacia',         flag:'🇭🇷', conf:'UEFA'},
+  {code:'GHA', name:'Ghana',           flag:'🇬🇭', conf:'CAF'},
+  {code:'PAN', name:'Panamá',          flag:'🇵🇦', conf:'CONCACAF'}
+];
+
+// Lista OFICIAL de los 20 jugadores con Extra Sticker
+const EXTRA_PLAYERS = [
+  // Leyendas
+  {id:'01', name:'Lionel Messi',       team:'🇦🇷', cat:'Leyendas'},
+  {id:'02', name:'Cristiano Ronaldo',  team:'🇵🇹', cat:'Leyendas'},
+  {id:'03', name:'Luka Modrić',        team:'🇭🇷', cat:'Leyendas'},
+  {id:'04', name:'Robert Lewandowski', team:'🇵🇱', cat:'Leyendas'},
+  // Estrellas mundiales
+  {id:'05', name:'Kylian Mbappé',      team:'🇫🇷', cat:'Estrellas'},
+  {id:'06', name:'Vinícius Jr.',       team:'🇧🇷', cat:'Estrellas'},
+  {id:'07', name:'Jude Bellingham',    team:'🏴󠁧󠁢󠁥󠁮󠁧󠁿', cat:'Estrellas'},
+  {id:'08', name:'Harry Kane',         team:'🏴󠁧󠁢󠁥󠁮󠁧󠁿', cat:'Estrellas'},
+  {id:'09', name:'Christian Pulisic',  team:'🇺🇸', cat:'Estrellas'},
+  {id:'10', name:'Mohamed Salah',      team:'🇪🇬', cat:'Estrellas'},
+  // Latinoamérica
+  {id:'11', name:'Luis Díaz',          team:'🇨🇴', cat:'Latinoamérica'},
+  {id:'12', name:'Santiago Giménez',   team:'🇲🇽', cat:'Latinoamérica'},
+  {id:'13', name:'Darwin Núñez',       team:'🇺🇾', cat:'Latinoamérica'},
+  {id:'14', name:'Federico Valverde',  team:'🇺🇾', cat:'Latinoamérica'},
+  {id:'15', name:'Moisés Caicedo',     team:'🇪🇨', cat:'Latinoamérica'},
+  // Jóvenes promesas
+  {id:'16', name:'Lamine Yamal',       team:'🇪🇸', cat:'Jóvenes promesas'},
+  {id:'17', name:'Endrick',            team:'🇧🇷', cat:'Jóvenes promesas'},
+  {id:'18', name:'Florian Wirtz',      team:'🇩🇪', cat:'Jóvenes promesas'},
+  {id:'19', name:'Jamal Musiala',      team:'🇩🇪', cat:'Jóvenes promesas'},
+  {id:'20', name:'Pau Cubarsí',        team:'🇪🇸', cat:'Jóvenes promesas'}
+];
+
+const EXTRA_VARIANTS = [
+  {key:'purple', label:'Morado', rarity:'Común'},
+  {key:'bronze', label:'Bronce', rarity:'Poco común'},
+  {key:'silver', label:'Plata',  rarity:'Raro'},
+  {key:'gold',   label:'Oro',    rarity:'1/1.900'}
+];
+
+const STICKERS_PER_TEAM = 20; // Confirmado: cada selección tiene 20 cromos numerados (1-20)
+const SPECIAL_COUNT = 20;     // Cromos especiales adicionales (estadios, récords, intro)
+
+// ============================================================
+// ESTADO
+// ============================================================
+let state = {
+  collection: {}, // { 'ARG': { 1: 0, 2: 1, ... } } 0=falta, 1=tengo, 2+=repetidas
+  special: {},    // { 1: 0, 2: 1, ... } cromos premium
+  extra: {}       // { '01-gold': 1, '02-purple': 2, ... }
+};
+
+// ============================================================
+// STORAGE (con fallback a localStorage)
+// ============================================================
+// ============================================================
+// SUPABASE — configuración
+// ============================================================
+const SUPABASE_URL = 'TU_SUPABASE_URL_AQUI';
+const SUPABASE_ANON_KEY = 'TU_SUPABASE_ANON_KEY_AQUI';
+
+const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true,
+    detectSessionInUrl: false,
+    storage: window.localStorage,
+    storageKey: 'album-2026-auth'
+  }
+});
+let currentUser = null;
+let saveTimeout = null;
+
+// ============================================================
+// STORAGE — Supabase con fallback a localStorage para offline
+// ============================================================
+async function loadState() {
+  if (!currentUser) return;
+  setSyncStatus('syncing', 'Cargando...');
+  try {
+    const { data, error } = await db
+      .from('albums')
+      .select('collection, special, extra')
+      .eq('user_id', currentUser.id)
+      .single();
+
+    if (error && error.code !== 'PGRST116') throw error;
+
+    if (data) {
+      state.collection = data.collection || {};
+      state.special = data.special || {};
+      state.extra = data.extra || {};
+    }
+  } catch (e) {
+    console.error('Error cargando álbum:', e);
+    setSyncStatus('error', '⚠ Error al cargar');
+    // Fallback: cargar de localStorage si hay
+    try {
+      const v = localStorage.getItem('mundial2026:state');
+      if (v) {
+        const parsed = JSON.parse(v);
+        if (parsed.collection) state.collection = parsed.collection;
+        if (parsed.special) state.special = parsed.special;
+        if (parsed.extra) state.extra = parsed.extra;
+      }
+    } catch (e2) {}
+  }
+  // Asegurar estructura
+  TEAMS.forEach(t => {
+    if (!state.collection[t.code]) state.collection[t.code] = {};
+  });
+  setSyncStatus('synced', '✓ Sincronizado');
+}
+
+async function saveState() {
+  if (!currentUser) return;
+  // Guardado inmediato local para no perder nada nunca
+  try {
+    localStorage.setItem('mundial2026:state', JSON.stringify(state));
+  } catch (e) {}
+
+  // Debounce: agrupa varios toques rápidos en un solo save remoto
+  setSyncStatus('syncing', '⟳ Guardando...');
+  if (saveTimeout) clearTimeout(saveTimeout);
+  saveTimeout = setTimeout(async () => {
+    try {
+      const { error } = await db
+        .from('albums')
+        .upsert({
+          user_id: currentUser.id,
+          collection: state.collection,
+          special: state.special,
+          extra: state.extra,
+          updated_at: new Date().toISOString()
+        }, { onConflict: 'user_id' });
+
+      if (error) throw error;
+      setSyncStatus('synced', '✓ Sincronizado');
+    } catch (e) {
+      console.error('Error guardando:', e);
+      setSyncStatus('error', '⚠ Sin conexión');
+    }
+  }, 800);
+}
+
+function setSyncStatus(cls, text) {
+  const el = document.getElementById('sync-status');
+  if (!el) return;
+  el.className = 'sync-status ' + cls;
+  el.textContent = text;
+}
+
+// ============================================================
+// LÓGICA DE CONTEO
+// ============================================================
+function getTeamCount(teamCode) {
+  const team = state.collection[teamCode] || {};
+  let owned = 0, dups = 0;
+  for (let i = 1; i <= STICKERS_PER_TEAM; i++) {
+    const v = team[i] || 0;
+    if (v >= 1) owned++;
+    if (v > 1) dups += (v - 1);
+  }
+  return { owned, dups, total: STICKERS_PER_TEAM };
+}
+
+function getSpecialStats() {
+  let owned = 0, dups = 0;
+  for (let i = 1; i <= SPECIAL_COUNT; i++) {
+    const v = state.special[i] || 0;
+    if (v >= 1) owned++;
+    if (v > 1) dups += (v - 1);
+  }
+  return { owned, dups, total: SPECIAL_COUNT };
+}
+
+function getExtraStats() {
+  let owned = 0, dups = 0;
+  EXTRA_PLAYERS.forEach(p => {
+    EXTRA_VARIANTS.forEach(v => {
+      const key = `${p.id}-${v.key}`;
+      const count = state.extra[key] || 0;
+      if (count >= 1) owned++;
+      if (count > 1) dups += (count - 1);
+    });
+  });
+  return { owned, dups, total: EXTRA_PLAYERS.length * EXTRA_VARIANTS.length };
+}
+
+function getGlobalStats() {
+  let owned = 0, dups = 0;
+  TEAMS.forEach(t => {
+    const c = getTeamCount(t.code);
+    owned += c.owned;
+    dups += c.dups;
+  });
+  const sp = getSpecialStats();
+  owned += sp.owned;
+  dups += sp.dups;
+  // Total del álbum oficial: 48*19 + 68 = 912 + 68 = 980
+  const total = TEAMS.length * STICKERS_PER_TEAM + SPECIAL_COUNT;
+  const missing = total - owned;
+  const pct = total > 0 ? Math.round((owned / total) * 100) : 0;
+  return { owned, missing, dups, total, pct };
+}
+
+// ============================================================
+// RENDER
+// ============================================================
+function updateStats() {
+  const s = getGlobalStats();
+  document.getElementById('stat-owned').textContent = s.owned;
+  document.getElementById('stat-missing').textContent = s.missing;
+  document.getElementById('stat-dups').textContent = s.dups;
+  document.getElementById('stat-pct').textContent = s.pct + '%';
+  document.getElementById('progress-fill').style.width = s.pct + '%';
+}
+
+function renderTeams(filter = '') {
+  const grid = document.getElementById('teams-grid');
+  const q = filter.toLowerCase().trim();
+  const filtered = TEAMS.filter(t =>
+    !q ||
+    t.name.toLowerCase().includes(q) ||
+    t.code.toLowerCase().includes(q) ||
+    t.conf.toLowerCase().includes(q)
+  );
+  if (filtered.length === 0) {
+    grid.innerHTML = '<div style="grid-column:1/-1; text-align:center; padding:40px; opacity:0.6;">Sin resultados</div>';
+    return;
+  }
+  grid.innerHTML = filtered.map(t => {
+    const c = getTeamCount(t.code);
+    const pct = Math.round((c.owned / c.total) * 100);
+    const isComplete = c.owned === c.total;
+    return `
+      <div class="team-card ${isComplete ? 'complete' : ''}" data-code="${t.code}">
+        <div class="team-flag">${t.flag}</div>
+        <div class="team-name">${t.name}</div>
+        <div class="team-conf">${t.conf}</div>
+        <div class="team-progress">${c.owned}/${c.total} · ${pct}%</div>
+        <div class="team-progress-bar"><div class="team-progress-fill" style="width:${pct}%"></div></div>
+      </div>
+    `;
+  }).join('');
+  grid.querySelectorAll('.team-card').forEach(card => {
+    card.addEventListener('click', () => openTeamDetail(card.dataset.code));
+  });
+}
+
+let currentTeam = null;
+
+function openTeamDetail(code) {
+  currentTeam = code;
+  const team = TEAMS.find(t => t.code === code);
+  document.getElementById('view-teams').style.display = 'none';
+  document.getElementById('view-detail').style.display = 'block';
+  document.getElementById('detail-title').textContent = `${team.flag} ${team.name}`;
+  renderStickers();
+}
+
+function closeTeamDetail() {
+  currentTeam = null;
+  document.getElementById('view-teams').style.display = 'block';
+  document.getElementById('view-detail').style.display = 'none';
+  renderTeams(document.getElementById('team-search').value);
+  updateStats();
+}
+
+function renderStickers() {
+  const grid = document.getElementById('stickers-grid');
+  const team = state.collection[currentTeam];
+  const c = getTeamCount(currentTeam);
+  document.getElementById('detail-meta').textContent =
+    `${c.owned}/${c.total} cromos · ${c.dups} repetidas`;
+  let html = '';
+  for (let i = 1; i <= STICKERS_PER_TEAM; i++) {
+    const count = team[i] || 0;
+    let cls = 'sticker';
+    if (count === 1) cls += ' owned';
+    else if (count >= 2) cls += ' duplicate';
+    const dupBadge = count >= 2 ? `<div class="dup-count">+${count - 1}</div>` : '';
+    html += `<div class="${cls}" data-num="${i}"><span class="sticker-num">${String(i).padStart(2, '0')}</span>${dupBadge}</div>`;
+  }
+  grid.innerHTML = html;
+  grid.querySelectorAll('.sticker').forEach(s => {
+    s.addEventListener('click', () => toggleSticker(parseInt(s.dataset.num)));
+  });
+}
+
+function toggleSticker(num) {
+  const team = state.collection[currentTeam];
+  const current = team[num] || 0;
+  // Ciclo: 0 (falta) → 1 (tengo) → 2 (1 rep) → 3 (2 rep) → 4 (3 rep) → 5 (4 rep) → 0
+  team[num] = (current + 1) % 6;
+  renderStickers();
+  updateStats();
+  saveState();
+}
+
+function renderSpecial() {
+  const grid = document.getElementById('special-grid');
+  const s = getSpecialStats();
+  const pct = Math.round((s.owned / s.total) * 100);
+  document.getElementById('special-meta').textContent =
+    `${s.owned}/${s.total} premium · ${s.dups} repetidas · ${pct}% completo`;
+  let html = '';
+  for (let i = 1; i <= SPECIAL_COUNT; i++) {
+    const count = state.special[i] || 0;
+    let cls = 'sticker';
+    if (count === 1) cls += ' premium';
+    else if (count >= 2) cls += ' duplicate';
+    const dupBadge = count >= 2 ? `<div class="dup-count">+${count - 1}</div>` : '';
+    html += `<div class="${cls}" data-num="${i}"><span class="sticker-num">FWC ${i}</span>${dupBadge}</div>`;
+  }
+  grid.innerHTML = html;
+  grid.querySelectorAll('.sticker').forEach(s => {
+    s.addEventListener('click', () => toggleSpecial(parseInt(s.dataset.num)));
+  });
+}
+
+function toggleSpecial(num) {
+  const current = state.special[num] || 0;
+  state.special[num] = (current + 1) % 6;
+  renderSpecial();
+  updateStats();
+  saveState();
+}
+
+function renderExtra() {
+  const container = document.getElementById('extra-players-list');
+  const s = getExtraStats();
+  const pct = Math.round((s.owned / s.total) * 100);
+  document.getElementById('extra-meta').textContent =
+    `${s.owned}/${s.total} extras · ${s.dups} repetidas · ${pct}% completo`;
+
+  // Agrupar por categoría
+  const cats = {};
+  EXTRA_PLAYERS.forEach(p => {
+    if (!cats[p.cat]) cats[p.cat] = [];
+    cats[p.cat].push(p);
+  });
+
+  let html = '';
+  Object.keys(cats).forEach(cat => {
+    html += `<div class="extra-category">⭐ ${cat}</div>`;
+    cats[cat].forEach(p => {
+      let variantsHtml = '';
+      EXTRA_VARIANTS.forEach(v => {
+        const key = `${p.id}-${v.key}`;
+        const count = state.extra[key] || 0;
+        let cls = `extra-variant ${v.key}`;
+        if (count === 1) cls += ' owned';
+        else if (count >= 2) cls += ' duplicate';
+        const badge = count >= 2 ? `<div class="extra-dup-badge">+${count - 1}</div>` : '';
+        variantsHtml += `
+          <div class="${cls}" data-key="${key}">
+            <span>${v.label}</span>
+            <span class="extra-rarity">${v.rarity}</span>
+            ${badge}
+          </div>
+        `;
+      });
+      html += `
+        <div class="extra-player">
+          <div class="extra-player-name">${p.team} ${p.name}</div>
+          <div class="extra-variants">${variantsHtml}</div>
+        </div>
+      `;
+    });
+  });
+
+  container.innerHTML = html;
+  container.querySelectorAll('.extra-variant').forEach(el => {
+    el.addEventListener('click', () => toggleExtra(el.dataset.key));
+  });
+}
+
+function toggleExtra(key) {
+  const current = state.extra[key] || 0;
+  // Ciclo más corto para extras: 0 → 1 → 2 → 3 → 0
+  state.extra[key] = (current + 1) % 4;
+  renderExtra();
+  updateStats();
+  saveState();
+}
+
+// ============================================================
+// INTERCAMBIO
+// ============================================================
+function renderTradeLists() {
+  // Selecciones
+  const dupsByTeam = {};
+  const missingByTeam = {};
+  TEAMS.forEach(t => {
+    const team = state.collection[t.code];
+    const dups = [];
+    const missing = [];
+    for (let i = 1; i <= STICKERS_PER_TEAM; i++) {
+      const v = team[i] || 0;
+      if (v === 0) missing.push(i);
+      if (v > 1) {
+        for (let j = 0; j < (v - 1); j++) dups.push(i);
+      }
+    }
+    if (dups.length) dupsByTeam[t.code] = { team: t, nums: dups };
+    if (missing.length) missingByTeam[t.code] = { team: t, nums: missing };
+  });
+
+  // Premium
+  const premiumDups = [];
+  const premiumMissing = [];
+  for (let i = 1; i <= SPECIAL_COUNT; i++) {
+    const v = state.special[i] || 0;
+    if (v === 0) premiumMissing.push(i);
+    if (v > 1) for (let j = 0; j < (v - 1); j++) premiumDups.push(i);
+  }
+
+  // Extras
+  const extraDups = [];
+  const extraMissing = [];
+  EXTRA_PLAYERS.forEach(p => {
+    EXTRA_VARIANTS.forEach(v => {
+      const key = `${p.id}-${v.key}`;
+      const count = state.extra[key] || 0;
+      const label = `${p.name} ${v.label}`;
+      if (count === 0) extraMissing.push(label);
+      if (count > 1) for (let j = 0; j < (count - 1); j++) extraDups.push(label);
+    });
+  });
+
+  const dupsList = document.getElementById('dups-list');
+  const missingList = document.getElementById('missing-list');
+
+  // Render dups
+  let dupsHtml = '';
+  if (Object.keys(dupsByTeam).length) {
+    dupsHtml += Object.values(dupsByTeam).map(d =>
+      `<strong style="color:var(--gold-bright)">${d.team.flag} ${d.team.name}:</strong> ${d.nums.map(n => String(n).padStart(2, '0')).join(', ')}`
+    ).join('<br>');
+  }
+  if (premiumDups.length) {
+    dupsHtml += (dupsHtml ? '<br>' : '') +
+      `<strong style="color:var(--premium-bright)">✨ Premium:</strong> ${premiumDups.map(n => 'FWC ' + n).join(', ')}`;
+  }
+  if (extraDups.length) {
+    dupsHtml += (dupsHtml ? '<br>' : '') +
+      `<strong style="color:var(--gold-bright)">⭐ Extra Stickers:</strong> ${extraDups.join(', ')}`;
+  }
+  dupsList.innerHTML = dupsHtml || 'Sin repetidas todavía. Seguí abriendo sobres.';
+
+  // Render missing
+  let missingHtml = '';
+  if (Object.keys(missingByTeam).length) {
+    missingHtml += Object.values(missingByTeam).map(m =>
+      `<strong style="color:var(--gold-bright)">${m.team.flag} ${m.team.name}:</strong> ${m.nums.map(n => String(n).padStart(2, '0')).join(', ')}`
+    ).join('<br>');
+  }
+  if (premiumMissing.length) {
+    missingHtml += (missingHtml ? '<br>' : '') +
+      `<strong style="color:var(--premium-bright)">✨ Premium:</strong> ${premiumMissing.map(n => 'FWC ' + n).join(', ')}`;
+  }
+  if (extraMissing.length) {
+    missingHtml += (missingHtml ? '<br>' : '') +
+      `<strong style="color:var(--gold-bright)">⭐ Extra Stickers:</strong> ${extraMissing.join(', ')}`;
+  }
+  missingList.innerHTML = missingHtml || '<strong style="color:var(--gold-bright)">¡Álbum completo! 🏆</strong>';
+}
+
+function buildPlainText(type) {
+  const lines = [];
+  if (type === 'dups') lines.push('🔄 CROMOS REPETIDOS — ÁLBUM PANINI 2026');
+  else lines.push('🎯 BUSCO ESTOS CROMOS — ÁLBUM PANINI 2026');
+  lines.push('');
+
+  // Selecciones
+  TEAMS.forEach(t => {
+    const team = state.collection[t.code];
+    const nums = [];
+    for (let i = 1; i <= STICKERS_PER_TEAM; i++) {
+      const v = team[i] || 0;
+      if (type === 'dups' && v > 1) {
+        for (let j = 0; j < (v - 1); j++) nums.push(String(i).padStart(2, '0'));
+      } else if (type === 'missing' && v === 0) {
+        nums.push(String(i).padStart(2, '0'));
+      }
+    }
+    if (nums.length) lines.push(`${t.flag} ${t.name}: ${nums.join(', ')}`);
+  });
+
+  // Premium
+  const premiumNums = [];
+  for (let i = 1; i <= SPECIAL_COUNT; i++) {
+    const v = state.special[i] || 0;
+    if (type === 'dups' && v > 1) {
+      for (let j = 0; j < (v - 1); j++) premiumNums.push('FWC ' + i);
+    } else if (type === 'missing' && v === 0) {
+      premiumNums.push('FWC ' + i);
+    }
+  }
+  if (premiumNums.length) lines.push(`✨ Premium: ${premiumNums.join(', ')}`);
+
+  // Extras
+  const extras = [];
+  EXTRA_PLAYERS.forEach(p => {
+    EXTRA_VARIANTS.forEach(v => {
+      const key = `${p.id}-${v.key}`;
+      const count = state.extra[key] || 0;
+      const label = `${p.name} ${v.label}`;
+      if (type === 'dups' && count > 1) {
+        for (let j = 0; j < (count - 1); j++) extras.push(label);
+      } else if (type === 'missing' && count === 0) {
+        extras.push(label);
+      }
+    });
+  });
+  if (extras.length) lines.push(`⭐ Extra Stickers: ${extras.join(', ')}`);
+
+  return lines.join('\n');
+}
+
+function showToast(msg) {
+  const existing = document.querySelector('.toast');
+  if (existing) existing.remove();
+  const t = document.createElement('div');
+  t.className = 'toast';
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 2200);
+}
+
+// ============================================================
+// EVENT LISTENERS
+// ============================================================
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById('section-' + tab.dataset.tab).classList.add('active');
+    if (tab.dataset.tab === 'trade') renderTradeLists();
+    if (tab.dataset.tab === 'special') renderSpecial();
+    if (tab.dataset.tab === 'extra') renderExtra();
+  });
+});
+
+document.getElementById('back-btn').addEventListener('click', closeTeamDetail);
+
+document.getElementById('team-search').addEventListener('input', e => {
+  renderTeams(e.target.value);
+});
+
+document.getElementById('copy-dups').addEventListener('click', async () => {
+  const txt = buildPlainText('dups');
+  try {
+    await navigator.clipboard.writeText(txt);
+    showToast('✓ Lista copiada');
+  } catch (e) {
+    showToast('No se pudo copiar');
+  }
+});
+
+document.getElementById('copy-missing').addEventListener('click', async () => {
+  const txt = buildPlainText('missing');
+  try {
+    await navigator.clipboard.writeText(txt);
+    showToast('✓ Lista copiada');
+  } catch (e) {
+    showToast('No se pudo copiar');
+  }
+});
+
+document.getElementById('share-dups').addEventListener('click', () => {
+  const txt = buildPlainText('dups');
+  window.open('https://wa.me/?text=' + encodeURIComponent(txt), '_blank');
+});
+
+document.getElementById('share-missing').addEventListener('click', () => {
+  const txt = buildPlainText('missing');
+  window.open('https://wa.me/?text=' + encodeURIComponent(txt), '_blank');
+});
+
+document.getElementById('reset-btn').addEventListener('click', () => {
+  if (confirm('¿Borrar todo tu progreso? Esta acción no se puede deshacer.')) {
+    state.collection = {};
+    state.special = {};
+    state.extra = {};
+    TEAMS.forEach(t => { state.collection[t.code] = {}; });
+    saveState();
+    renderTeams();
+    updateStats();
+    showToast('Álbum reiniciado');
+  }
+});
+
+// ============================================================
+// AUTH — Login, registro, logout
+// ============================================================
+let authMode = 'login'; // 'login' | 'signup'
+
+document.querySelectorAll('.auth-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    authMode = tab.dataset.auth;
+    document.getElementById('auth-submit').textContent =
+      authMode === 'login' ? 'Ingresar' : 'Crear cuenta';
+    document.getElementById('auth-error').textContent = '';
+  });
+});
+
+async function handleAuth() {
+  const email = document.getElementById('auth-email').value.trim();
+  const password = document.getElementById('auth-password').value;
+  const errorEl = document.getElementById('auth-error');
+  const btn = document.getElementById('auth-submit');
+
+  errorEl.textContent = '';
+
+  if (!email || !password) {
+    errorEl.textContent = 'Completá email y contraseña';
+    return;
+  }
+  if (password.length < 6) {
+    errorEl.textContent = 'La contraseña debe tener al menos 6 caracteres';
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'Procesando...';
+
+  try {
+    let result;
+    if (authMode === 'signup') {
+      result = await db.auth.signUp({ email, password });
+    } else {
+      result = await db.auth.signInWithPassword({ email, password });
+    }
+
+    if (result.error) {
+      // Traducciones amigables de errores comunes
+      let msg = result.error.message;
+      if (msg.includes('Invalid login credentials')) msg = 'Email o contraseña incorrectos';
+      else if (msg.includes('User already registered')) msg = 'Este email ya está registrado. Probá ingresando.';
+      else if (msg.includes('Email not confirmed')) msg = 'Tenés que confirmar tu email primero';
+      errorEl.textContent = msg;
+      btn.disabled = false;
+      btn.textContent = authMode === 'login' ? 'Ingresar' : 'Crear cuenta';
+      return;
+    }
+
+    // Éxito
+    currentUser = result.data.user;
+    document.getElementById('auth-overlay').style.display = 'none';
+    document.getElementById('user-info').textContent = '👤 ' + currentUser.email;
+    await loadState();
+    renderTeams();
+    updateStats();
+  } catch (e) {
+    errorEl.textContent = 'Error de conexión. Probá de nuevo.';
+    btn.disabled = false;
+    btn.textContent = authMode === 'login' ? 'Ingresar' : 'Crear cuenta';
+  }
+}
+
+document.getElementById('auth-submit').addEventListener('click', handleAuth);
+document.getElementById('auth-password').addEventListener('keypress', (e) => {
+  if (e.key === 'Enter') handleAuth();
+});
+document.getElementById('auth-email').addEventListener('keypress', (e) => {
+  if (e.key === 'Enter') document.getElementById('auth-password').focus();
+});
+
+document.getElementById('logout-btn').addEventListener('click', async () => {
+  if (!confirm('¿Cerrar sesión? Tu progreso ya está guardado en la nube.')) return;
+  await db.auth.signOut();
+  currentUser = null;
+  state.collection = {};
+  state.special = {};
+  state.extra = {};
+  TEAMS.forEach(t => { state.collection[t.code] = {}; });
+  document.getElementById('auth-overlay').style.display = 'flex';
+  document.getElementById('auth-email').value = '';
+  document.getElementById('auth-password').value = '';
+  document.getElementById('user-info').textContent = '';
+});
+
+// ============================================================
+// INIT
+// ============================================================
+(async () => {
+  // Registrar Service Worker (PWA)
+  if ('serviceWorker' in navigator) {
+    try {
+      await navigator.serviceWorker.register('sw.js');
+    } catch (e) {
+      console.warn('SW registration failed:', e);
+    }
+  }
+
+  // Verificar si ya hay sesión activa
+  const { data: { session } } = await db.auth.getSession();
+  if (session) {
+    currentUser = session.user;
+    document.getElementById('auth-overlay').style.display = 'none';
+    document.getElementById('user-info').textContent = '👤 ' + currentUser.email;
+    await loadState();
+    renderTeams();
+    updateStats();
+  }
+  // Si no hay sesión, el modal queda visible
+})();
+</script>
+</body>
+</html>

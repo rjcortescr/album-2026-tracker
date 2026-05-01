@@ -1,0 +1,33 @@
+{
+  "name": "Mi Álbum 2026 — Tracker Panini",
+  "short_name": "Álbum 2026",
+  "description": "Tracker del álbum Panini Mundial 2026",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#052619",
+  "theme_color": "#0a3d2e",
+  "lang": "es-CR",
+  "categories": ["sports", "entertainment", "utilities"],
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
